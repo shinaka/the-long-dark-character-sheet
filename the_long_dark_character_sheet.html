@@ -32,6 +32,9 @@
     line-height: 1.5;
     min-height: 100vh;
     padding: 20px;
+    /* Scale the whole sheet up for on-screen readability (the dense
+       layout uses small fixed-px fonts). Reset to 1 for print below. */
+    zoom: 1.4;
   }
 
   .sheet-wrapper {
@@ -511,7 +514,7 @@
   }
 
   @media print {
-    body { background: white; padding: 0; }
+    body { background: white; padding: 0; zoom: 1; }
     .sheet-wrapper { box-shadow: none; border: none; max-width: 100%; }
     .page-tabs { display: none; }
     .page { display: block !important; page-break-before: always; }
@@ -1671,15 +1674,16 @@
           const checks = document.querySelectorAll('.skill-check');
           data._skills_marked.forEach(i => { if (checks[i]) checks[i].classList.add('marked'); });
         }
-        // Restore sanity pips
-        document.querySelectorAll('.sanity-pip').forEach(p => p.classList.remove('lost'));
+        // Apply the auto filled/lost baseline from current/max first
+        // (updateSanityTrack clears every pip), then layer the
+        // manually-toggled lost pips on top so they aren't wiped.
+        updateSanityTrack();
         if (data._sanity_pips) {
           data._sanity_pips.forEach(i => {
             const pip = document.querySelector(`.sanity-pip[data-index="${i}"]`);
             if (pip) pip.classList.add('lost');
           });
         }
-        updateSanityTrack();
       } catch(err) {
         alert('Could not load sheet. Make sure the file is a valid .json sheet from The Long Dark.');
       }
