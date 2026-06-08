@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Long Dark — Character Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --paper: #1a1814;
+    --paper-mid: #221f1a;
+    --paper-light: #2a2620;
+    --ink: #c8b89a;
+    --ink-dim: #7a6e5f;
+    --ink-bright: #e8d5b0;
+    --red: #8b2020;
+    --red-dim: #5a1515;
+    --border: #3a3428;
+    --border-bright: #4a4035;
+    --input-bg: #141210;
+    --accent: #6b5c3e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0e0c0a;
+    color: var(--ink);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .sheet-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--border-bright);
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.3);
+    position: relative;
+  }
+
+  .sheet-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(58,52,40,0.15) 28px,
+      rgba(58,52,40,0.15) 29px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .sheet-header {
+    background: var(--paper-mid);
+    border-bottom: 2px solid var(--red);
+    padding: 24px 32px 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .campaign-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 28px;
+    color: var(--ink-bright);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .campaign-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .classification {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--red);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: right;
+    border: 1px solid var(--red-dim);
+    padding: 4px 8px;
+  }
+
+  .header-rule {
+    border: none;
+    border-top: 1px solid var(--border-bright);
+    margin: 12px 0 0;
+  }
+
+  /* PAGE TABS */
+  .page-tabs {
+    display: flex;
+    background: var(--paper-mid);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+
+  .tab-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    background: none;
+    border: none;
+    border-right: 1px solid var(--border);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--ink); background: rgba(255,255,255,0.03); }
+  .tab-btn.active { color: var(--ink-bright); background: var(--paper); border-bottom: 2px solid var(--red); margin-bottom: -1px; }
+
+  /* PAGES */
+  .page { display: none; padding: 28px 32px; position: relative; z-index: 1; }
+  .page.active { display: block; }
+
+  /* SECTION HEADERS */
+  .section-header {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    border-bottom: 1px solid var(--red-dim);
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    margin-top: 24px;
+  }
+
+  .section-header:first-child { margin-top: 0; }
+
+  /* FIELD GROUPS */
+  .field-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .field.w2 { flex: 2; }
+  .field.w3 { flex: 3; }
+  .field.w-fixed-80 { flex: none; width: 80px; }
+  .field.w-fixed-120 { flex: none; width: 120px; }
+
+  .field-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 4px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  select {
+    background: var(--input-bg);
+    border: 1px solid var(--border-bright);
+    color: var(--ink-bright);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 14px;
+    padding: 6px 8px;
+    width: 100%;
+    transition: border-color 0.2s;
+    outline: none;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--accent);
+    background: #1a1612;
+  }
+
+  textarea { min-height: 60px; }
+  textarea.tall { min-height: 90px; }
+  textarea.short { min-height: 44px; }
+
+  select {
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+
+  select option { background: var(--paper-mid); }
+
+  /* STAT BLOCKS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    background: var(--paper-mid);
+    border: 1px solid var(--border-bright);
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .stat-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .stat-input {
+    width: 52px !important;
+    text-align: center;
+    font-family: 'Special Elite', monospace !important;
+    font-size: 20px !important;
+    padding: 4px !important;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .stat-half {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* DERIVED STATS */
+  .derived-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .derived-box {
+    background: var(--paper-mid);
+    border: 1px solid var(--border-bright);
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .derived-box.sanity { border-color: var(--red-dim); }
+
+  /* SANITY TRACK */
+  .sanity-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .sanity-pip {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-bright);
+    background: var(--input-bg);
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .sanity-pip.filled { background: var(--ink-dim); }
+  .sanity-pip.lost { background: var(--red-dim); border-color: var(--red); }
+
+  /* SKILLS */
+  .skills-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+  }
+
+  .skill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(58,52,40,0.4);
+  }
+
+  .skill-check {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-bright);
+    background: var(--input-bg);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .skill-check.marked { background: var(--accent); }
+
+  .skill-name {
+    font-family: 'Crimson Pro', serif;
+    font-size: 13px;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .skill-base {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    width: 28px;
+    text-align: right;
+  }
+
+  .skill-value {
+    width: 36px !important;
+    text-align: center;
+    font-size: 13px !important;
+    padding: 2px 4px !important;
+  }
+
+  /* WEAPONS */
+  .weapon-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 3fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: start;
+  }
+
+  .weapon-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 3fr;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .col-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+
+  /* SPELLS */
+  .spell-fragment {
+    background: var(--paper-mid);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .spell-assembled {
+    background: var(--paper-mid);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red-dim);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  /* CONNECTIONS */
+  .connection-block {
+    background: var(--paper-mid);
+    border: 1px solid var(--border);
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  /* WITNESS RECORD */
+  .witness-entry {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: flex-start;
+  }
+
+  .witness-location {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--red);
+    min-width: 80px;
+    margin-top: 8px;
+  }
+
+  /* BUTTONS */
+  .add-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    background: none;
+    border: 1px solid var(--border-bright);
+    padding: 6px 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+  }
+
+  .add-btn:hover { color: var(--ink); border-color: var(--accent); }
+
+  .save-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-bright);
+    background: var(--red-dim);
+    border: 1px solid var(--red);
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 12px;
+  }
+
+  .save-btn:hover { background: var(--red); }
+
+  .sheet-footer {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer-note {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    letter-spacing: 1px;
+  }
+
+  /* MEMENTO BLOCK */
+  .memento-block {
+    background: var(--paper-mid);
+    border: 1px solid var(--border-bright);
+    border-top: 2px solid var(--accent);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* QUOTE BLOCK */
+  .sheet-quote {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-dim);
+    text-align: center;
+    padding: 12px 32px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  /* SMALL HELPERS */
+  .help-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .sheet-wrapper { box-shadow: none; border: none; max-width: 100%; }
+    .page-tabs { display: none; }
+    .page { display: block !important; page-break-before: always; }
+    .page:first-of-type { page-break-before: avoid; }
+    .sheet-footer .save-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet-wrapper">
+
+  <!-- HEADER -->
+  <div class="sheet-header">
+    <div class="header-top">
+      <div>
+        <div class="campaign-title">The Long Dark</div>
+        <div class="campaign-subtitle">Call of Cthulhu — 2001 — Investigator Record</div>
+      </div>
+      <div class="classification">Not For Distribution<br>Handler Copy: Irene</div>
+    </div>
+    <hr class="header-rule">
+  </div>
+
+  <!-- TABS -->
+  <div class="page-tabs">
+    <button class="tab-btn active" onclick="showPage('identity')">I. Identity</button>
+    <button class="tab-btn" onclick="showPage('statistics')">II. Statistics</button>
+    <button class="tab-btn" onclick="showPage('skills')">III. Skills</button>
+    <button class="tab-btn" onclick="showPage('field')">IV. Field</button>
+    <button class="tab-btn" onclick="showPage('witness')">V. Witness Record</button>
+  </div>
+
+  <!-- PAGE I: IDENTITY -->
+  <div class="page active" id="page-identity">
+
+    <div class="section-header">The Connection to Mercer</div>
+    <div class="field-row">
+      <div class="field w3">
+        <div class="field-label">How did you know David Mercer?</div>
+        <textarea class="tall" id="mercer-connection" placeholder="Be specific. Not 'through journalism' but 'he called me in 1998 asking about the Carlyle family trust documents I had filed as part of a probate case...'"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">How long had you known him?</div>
+        <input type="text" id="mercer-duration">
+        <div class="field-label" style="margin-top:12px;">When did you last speak to him?</div>
+        <input type="text" id="mercer-last">
+        <div class="field-label" style="margin-top:12px;">Did he ever mention the Carlyle Expedition?</div>
+        <select id="mercer-carlyle">
+          <option value="">—</option>
+          <option>Yes, directly</option>
+          <option>In passing, once</option>
+          <option>No</option>
+          <option>I didn't know what it was at the time</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">Personal Particulars</div>
+
+    <div style="display:flex; gap:20px; align-items:flex-start; margin-bottom:12px;">
+
+      <div style="flex-shrink:0;">
+        <div class="field-label" style="margin-bottom:6px;">Portrait</div>
+        <div id="portrait-container" onclick="document.getElementById('portrait-input').click()" style="width:110px;height:140px;background:var(--input-bg);border:1px solid var(--border-bright);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;transition:border-color 0.2s;">
+          <img id="portrait-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+          <div id="portrait-placeholder" style="text-align:center;padding:8px;">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:28px;color:var(--border-bright);line-height:1;">+</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--ink-dim);letter-spacing:1px;margin-top:6px;line-height:1.6;">UPLOAD<br>PORTRAIT</div>
+          </div>
+        </div>
+        <input type="file" id="portrait-input" accept="image/*" style="display:none;" onchange="handlePortrait(event)">
+        <button onclick="clearPortrait(event)" style="width:110px;margin-top:4px;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--ink-dim);background:none;border:1px solid var(--border);padding:4px;cursor:pointer;">clear</button>
+      </div>
+
+      <div style="flex:1;">
+        <div class="field-row">
+          <div class="field w2">
+            <div class="field-label">Full Name</div>
+            <input type="text" id="name">
+          </div>
+          <div class="field">
+            <div class="field-label">Age</div>
+            <input type="number" id="age" min="18" max="80">
+          </div>
+          <div class="field">
+            <div class="field-label">Nationality</div>
+            <input type="text" id="nationality">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field w2">
+            <div class="field-label">Occupation</div>
+            <input type="text" id="occupation">
+          </div>
+          <div class="field w2">
+            <div class="field-label">Previous occupation or background</div>
+            <input type="text" id="background">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Current city of residence</div>
+            <input type="text" id="residence">
+          </div>
+          <div class="field">
+            <div class="field-label">Passport nationality</div>
+            <input type="text" id="passport">
+          </div>
+          <div class="field">
+            <div class="field-label">Languages spoken</div>
+            <input type="text" id="languages" placeholder="English + ...">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">Who You Were Before This Started</div>
+    <div class="help-text" style="margin-bottom:10px;">Answer briefly. The campaign will show the rest.</div>
+
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">What did you believe about the world before February 2001?</div>
+        <textarea id="belief-before" placeholder="One or two sentences. The belief that will be tested."></textarea>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">What are you most afraid of losing?</div>
+        <textarea class="short" id="fear-losing" placeholder="Not a thing. A person, a capacity, a certainty."></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">What would you give up to protect the people you care about?</div>
+        <textarea class="short" id="sacrifice" placeholder="Be honest. This may come up."></textarea>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">The Connection — Someone Outside This</div>
+    <div class="help-text" style="margin-bottom:10px;">One person who exists outside the investigation. Who you call when something goes wrong in your normal life. Who does not know what you are doing.</div>
+
+    <div class="connection-block">
+      <div class="field-row">
+        <div class="field w2">
+          <div class="field-label">Name</div>
+          <input type="text" id="conn-name">
+        </div>
+        <div class="field">
+          <div class="field-label">Relationship</div>
+          <input type="text" id="conn-rel" placeholder="sister, former partner, mentor...">
+        </div>
+        <div class="field">
+          <div class="field-label">Location</div>
+          <input type="text" id="conn-loc">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">What would their involvement in this investigation cost you?</div>
+          <textarea class="short" id="conn-cost" placeholder="What the keeper can threaten. What you are protecting."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">The Debt</div>
+    <div class="help-text" style="margin-bottom:10px;">Something unresolved. An obligation you carry. Not toward the investigation — toward your life.</div>
+
+    <div class="field-row">
+      <div class="field w2">
+        <div class="field-label">What do you owe, and to whom?</div>
+        <textarea class="short" id="debt"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">How long have you owed it?</div>
+        <input type="text" id="debt-duration">
+        <div class="field-label" style="margin-top:12px;">Have you tried to resolve it?</div>
+        <select id="debt-status">
+          <option value="">—</option>
+          <option>Yes, and failed</option>
+          <option>Yes, and avoided it</option>
+          <option>No, not yet</option>
+          <option>I've stopped trying</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">The Memento</div>
+    <div class="help-text" style="margin-bottom:10px;">One object you carry. Not a weapon. Not equipment. Something personal, something that has weight. The campaign may ask you what you are willing to give up. This is where that begins.</div>
+
+    <div class="memento-block">
+      <div class="field-row">
+        <div class="field w2">
+          <div class="field-label">What is it?</div>
+          <input type="text" id="memento-name" placeholder="Be specific. Not 'a photograph' but 'a photograph of...'">
+        </div>
+        <div class="field">
+          <div class="field-label">Where did it come from?</div>
+          <input type="text" id="memento-origin">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">Why do you still have it?</div>
+          <textarea class="short" id="memento-why"></textarea>
+        </div>
+        <div class="field">
+          <div class="field-label">What would it cost you to give it up?</div>
+          <textarea class="short" id="memento-cost"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGE II: STATISTICS -->
+  <div class="page" id="page-statistics">
+
+    <div class="section-header">Core Characteristics</div>
+    <div class="help-text" style="margin-bottom:14px;">Roll or assign. Half and fifth values calculate automatically when you tab out of the field.</div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <span class="stat-name">STR</span>
+        <input type="number" class="stat-input" id="str" min="1" max="99" oninput="calcHalf('str')">
+        <span class="stat-half" id="str-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">CON</span>
+        <input type="number" class="stat-input" id="con" min="1" max="99" oninput="calcHalf('con')">
+        <span class="stat-half" id="con-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">SIZ</span>
+        <input type="number" class="stat-input" id="siz" min="1" max="99" oninput="calcHalf('siz')">
+        <span class="stat-half" id="siz-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">DEX</span>
+        <input type="number" class="stat-input" id="dex" min="1" max="99" oninput="calcHalf('dex')">
+        <span class="stat-half" id="dex-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">APP</span>
+        <input type="number" class="stat-input" id="app" min="1" max="99" oninput="calcHalf('app')">
+        <span class="stat-half" id="app-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">INT</span>
+        <input type="number" class="stat-input" id="int" min="1" max="99" oninput="calcHalf('int')">
+        <span class="stat-half" id="int-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">POW</span>
+        <input type="number" class="stat-input" id="pow" min="1" max="99" oninput="calcHalf('pow')">
+        <span class="stat-half" id="pow-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">EDU</span>
+        <input type="number" class="stat-input" id="edu" min="1" max="99" oninput="calcHalf('edu')">
+        <span class="stat-half" id="edu-half">½ —</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-name">LUCK</span>
+        <input type="number" class="stat-input" id="luck" min="1" max="99" oninput="calcHalf('luck')">
+        <span class="stat-half" id="luck-half">½ —</span>
+      </div>
+    </div>
+
+    <div class="section-header">Derived Values</div>
+    <div class="derived-grid">
+      <div class="derived-box">
+        <span class="stat-name">Hit Points Max</span>
+        <input type="number" class="stat-input" id="hp-max" min="1" max="30">
+        <div style="margin-top:8px;">
+          <span class="stat-name">Current HP</span>
+          <input type="number" class="stat-input" id="hp-current" min="0" max="30">
+        </div>
+      </div>
+      <div class="derived-box">
+        <span class="stat-name">Magic Points Max</span>
+        <input type="number" class="stat-input" id="mp-max" min="1" max="30">
+        <div style="margin-top:8px;">
+          <span class="stat-name">Current MP</span>
+          <input type="number" class="stat-input" id="mp-current" min="0" max="30">
+        </div>
+      </div>
+      <div class="derived-box">
+        <span class="stat-name">Move Rate</span>
+        <input type="number" class="stat-input" id="move" min="1" max="12" value="8">
+      </div>
+      <div class="derived-box">
+        <span class="stat-name">Build / Damage Bonus</span>
+        <input type="text" class="stat-input" id="build" style="font-size:14px !important;" placeholder="0">
+      </div>
+    </div>
+
+    <div class="section-header">Sanity</div>
+    <div class="derived-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="derived-box sanity">
+        <span class="stat-name">Starting Sanity</span>
+        <input type="number" class="stat-input" id="san-start" min="0" max="99">
+      </div>
+      <div class="derived-box sanity">
+        <span class="stat-name">Max Sanity</span>
+        <input type="number" class="stat-input" id="san-max" min="0" max="99">
+      </div>
+      <div class="derived-box sanity">
+        <span class="stat-name">Current Sanity</span>
+        <input type="number" class="stat-input" id="san-current" min="0" max="99" oninput="updateSanityTrack()">
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div class="field-label" style="margin-bottom:8px;">Sanity Track — click to mark loss</div>
+      <div class="sanity-track" id="sanity-track"></div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">Breaking Points</div>
+    <div class="help-text" style="margin-bottom:10px;">What specifically breaks this character. Not a number — a thing. What they cannot witness and remain themselves. Complete during Session 0.</div>
+
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">What would cause a complete breakdown?</div>
+        <textarea class="short" id="breaking-point" placeholder="Specific. Not 'violence' but 'harm to a specific person' or 'evidence that everything I believed was false'..."></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">What do they do when they are losing their mind?</div>
+        <textarea class="short" id="losing-mind" placeholder="Specific behavior. What the other players will see when this character is at the edge."></textarea>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">Physical Notes</div>
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">Distinguishing features or physical description</div>
+        <textarea class="short" id="physical"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Injuries or conditions (update during play)</div>
+        <textarea class="short" id="injuries"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGE III: SKILLS -->
+  <div class="page" id="page-skills">
+
+    <div class="help-text" style="margin-bottom:14px;">Base values in brackets. Enter your character's trained value. Click the checkbox to mark a skill for experience improvement at chapter end.</div>
+
+    <div class="section-header">Investigative</div>
+    <div class="skills-columns">
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Accounting</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Appraise</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Archaeology</div>
+          <div class="skill-base">01</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="01">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Bureaucracy</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Computer Use</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Cthulhu Mythos</div>
+          <div class="skill-base">00</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="00">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">History</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Law</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Library Use</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+      </div>
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Navigate</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Occult</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Photography / Media</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Research (Digital)</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Research (Physical)</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Science (specify)</div>
+          <div class="skill-base">01</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="01">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Spot Hidden</div>
+          <div class="skill-base">25</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="25">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Track</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px;">Interpersonal</div>
+    <div class="skills-columns">
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Charm</div>
+          <div class="skill-base">15</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="15">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Fast Talk</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Intimidate</div>
+          <div class="skill-base">15</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="15">
+        </div>
+      </div>
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Listen</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Persuade</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Psychology</div>
+          <div class="skill-base">10</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="10">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px;">Physical and Combat</div>
+    <div class="skills-columns">
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Climb</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Dodge</div>
+          <div class="skill-base">DEX/2</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Drive (standard)</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Drive (off-road / field)</div>
+          <div class="skill-base">05</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="05">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Fighting (Brawl)</div>
+          <div class="skill-base">25</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="25">
+        </div>
+      </div>
+      <div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Firearms (Handgun)</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Firearms (Rifle/Shotgun)</div>
+          <div class="skill-base">25</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="25">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">First Aid</div>
+          <div class="skill-base">30</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="30">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Medicine (field)</div>
+          <div class="skill-base">01</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="01">
+        </div>
+        <div class="skill-row">
+          <div class="skill-check" onclick="toggleSkill(this)"></div>
+          <div class="skill-name">Stealth</div>
+          <div class="skill-base">20</div>
+          <input type="number" class="skill-value" min="0" max="99" placeholder="20">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px;">Languages (additional)</div>
+    <div id="language-list">
+      <div class="skill-row">
+        <div class="skill-check" onclick="toggleSkill(this)"></div>
+        <input type="text" style="flex:1; margin-right:8px;" placeholder="Language name">
+        <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+      </div>
+      <div class="skill-row">
+        <div class="skill-check" onclick="toggleSkill(this)"></div>
+        <input type="text" style="flex:1; margin-right:8px;" placeholder="Language name">
+        <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px;">Specialist / Occupational Skills</div>
+    <div class="help-text" style="margin-bottom:10px;">Skills specific to your occupation not listed above. Name them and set values.</div>
+    <div id="specialist-list">
+      <div class="skill-row">
+        <div class="skill-check" onclick="toggleSkill(this)"></div>
+        <input type="text" style="flex:1; margin-right:8px;" placeholder="Skill name">
+        <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+      </div>
+      <div class="skill-row">
+        <div class="skill-check" onclick="toggleSkill(this)"></div>
+        <input type="text" style="flex:1; margin-right:8px;" placeholder="Skill name">
+        <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+      </div>
+      <div class="skill-row">
+        <div class="skill-check" onclick="toggleSkill(this)"></div>
+        <input type="text" style="flex:1; margin-right:8px;" placeholder="Skill name">
+        <input type="number" class="skill-value" min="0" max="99" placeholder="—">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGE IV: FIELD -->
+  <div class="page" id="page-field">
+
+    <div class="section-header">Weapons — Currently Available</div>
+    <div class="help-text" style="margin-bottom:10px;">Update each location. Note how you acquired each weapon. Remember: you cannot fly internationally with a firearm without prior clearance. What you have here is not what you will have everywhere.</div>
+
+    <div class="weapon-header">
+      <div class="col-label">Weapon</div>
+      <div class="col-label">Skill %</div>
+      <div class="col-label">Damage</div>
+      <div class="col-label">Range</div>
+      <div class="col-label">How acquired / notes</div>
+    </div>
+    <div id="weapon-list">
+      <div class="weapon-row">
+        <input type="text" placeholder="e.g. Glock 17 (9mm)">
+        <input type="number" min="0" max="99" placeholder="—">
+        <input type="text" placeholder="1d10">
+        <input type="text" placeholder="15m">
+        <input type="text" placeholder="Licensed, US only. Left in hotel safe in Cairo.">
+      </div>
+      <div class="weapon-row">
+        <input type="text" placeholder="e.g. Folding knife">
+        <input type="number" min="0" max="99" placeholder="—">
+        <input type="text" placeholder="1d4+db">
+        <input type="text" placeholder="touch">
+        <input type="text" placeholder="Carried throughout. Checked luggage.">
+      </div>
+      <div class="weapon-row">
+        <input type="text" placeholder="—">
+        <input type="number" min="0" max="99" placeholder="—">
+        <input type="text" placeholder="—">
+        <input type="text" placeholder="—">
+        <input type="text" placeholder="—">
+      </div>
+    </div>
+    <button class="add-btn" onclick="addWeapon()">+ Add Weapon</button>
+
+    <div class="help-text" style="margin-top:10px; margin-bottom: 4px; color: var(--red);">Weapon limits for this campaign:</div>
+    <div class="help-text">No automatic weapons without an extraordinary in-fiction reason. No suppressors. No military-spec equipment without prior arrangement through Irene. The players are private citizens, not agents. Their weapons are what private citizens can plausibly own, transport, and use.</div>
+
+    <hr class="divider">
+    <div class="section-header">Ritual Fragments Acquired</div>
+    <div class="help-text" style="margin-bottom:10px;">Pieces of spells or rituals gathered during the investigation. Most will not be usable alone. Track source and what you think they are part of.</div>
+
+    <div id="fragment-list">
+      <div class="spell-fragment">
+        <div class="field-row">
+          <div class="field w-fixed-120">
+            <div class="field-label">Source / Location</div>
+            <input type="text" placeholder="e.g. Shanghai ledger">
+          </div>
+          <div class="field w2">
+            <div class="field-label">What it appears to describe</div>
+            <input type="text" placeholder="e.g. A warding process — partial — requires 2 additional components">
+          </div>
+          <div class="field w-fixed-80">
+            <div class="field-label">Sanity cost</div>
+            <input type="text" placeholder="0/1">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addFragment()">+ Add Fragment</button>
+
+    <hr class="divider">
+    <div class="section-header">Spells Assembled</div>
+    <div class="help-text" style="margin-bottom:10px;">Complete workable spells. Each costs Magic Points and often Sanity to cast. Use sparingly — these are last resort tools, not standard equipment.</div>
+
+    <div id="spell-list">
+      <div class="spell-assembled">
+        <div class="field-row">
+          <div class="field w2">
+            <div class="field-label">Spell / Ritual name</div>
+            <input type="text" placeholder="e.g. Warding of Threshold">
+          </div>
+          <div class="field w-fixed-80">
+            <div class="field-label">MP cost</div>
+            <input type="number" placeholder="0" min="0">
+          </div>
+          <div class="field w-fixed-80">
+            <div class="field-label">Sanity cost</div>
+            <input type="text" placeholder="0/1D3">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">What it does</div>
+            <input type="text" placeholder="Effect, duration, limitations">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Assembled from</div>
+            <input type="text" placeholder="Sources used to complete this spell">
+          </div>
+          <div class="field w-fixed-120">
+            <div class="field-label">Times used</div>
+            <input type="number" placeholder="0" min="0">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addSpell()">+ Add Assembled Spell</button>
+
+    <hr class="divider">
+    <div class="section-header">Equipment and Resources</div>
+    <div class="help-text" style="margin-bottom:10px;">Significant equipment the character carries or has access to. Not every item — things that matter.</div>
+    <div class="field-row">
+      <div class="field">
+        <textarea class="tall" id="equipment" placeholder="Satellite phone (Irene's). Leica camera with three rolls of 35mm. A copy of Brady's journal. Thomas Hartley's sealed envelope..."></textarea>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-header">Travel Status</div>
+    <div class="help-text" style="margin-bottom:10px;">Update as the campaign progresses. Track complications.</div>
+    <div class="two-col">
+      <div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Current location</div>
+            <input type="text" id="current-location">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Passport status / flags</div>
+            <input type="text" id="passport-status" placeholder="Clean / Flagged in China / Visa expired...">
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Active visas / permits</div>
+            <textarea class="short" id="visas" placeholder="UK — no visa required&#10;Egypt — tourist visa on arrival&#10;Kenya — tourist visa on arrival..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGE V: WITNESS RECORD -->
+  <div class="page" id="page-witness">
+
+    <div class="sheet-quote">"Delay is not nothing." — Zawadi, Nairobi / Muriel, Australia</div>
+
+    <div class="section-header">What I Have Seen</div>
+    <div class="help-text" style="margin-bottom:12px;">A running record of what this character has witnessed across the campaign. Updated after each significant encounter. Not a plot summary — what it cost, what it changed, what they understand now that they did not understand before.</div>
+
+    <div id="witness-list">
+      <div class="witness-entry">
+        <div class="witness-location">NEW YORK</div>
+        <textarea class="short" style="flex:1;" placeholder="What they understood when they walked out of Fitch's office. What the storage unit told them about Mercer. What it felt like to hold Brady's journal."></textarea>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addWitness()">+ Add Entry</button>
+
+    <hr class="divider">
+    <div class="section-header">Temporary and Indefinite Insanity Record</div>
+    <div class="help-text" style="margin-bottom:10px;">Track episodes of temporary and indefinite insanity. What triggered it, what form it took, whether it has been resolved.</div>
+
+    <div id="insanity-list">
+      <div style="background: var(--paper-mid); border: 1px solid var(--border); border-left: 3px solid var(--red-dim); padding: 10px 12px; margin-bottom: 8px;">
+        <div class="field-row">
+          <div class="field w-fixed-120">
+            <div class="field-label">Location / Session</div>
+            <input type="text" placeholder="e.g. Shanghai">
+          </div>
+          <div class="field">
+            <div class="field-label">Trigger</div>
+            <input type="text" placeholder="What caused it">
+          </div>
+          <div class="field">
+            <div class="field-label">Form</div>
+            <input type="text" placeholder="How it manifested">
+          </div>
+          <div class="field w-fixed-80">
+            <div class="field-label">Resolved?</div>
+            <select>
+              <option value="">—</option>
+              <option>Yes</option>
+              <option>Partially</option>
+              <option>No</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addInsanity()">+ Add Episode</button>
+
+    <hr class="divider">
+    <div class="section-header">Things I Know That Cannot Be Unknown</div>
+    <div class="help-text" style="margin-bottom:10px;">Specific pieces of Mythos knowledge this character now carries. Not mechanical — what they understand about the world that other people do not.</div>
+
+    <div id="knowledge-list">
+      <div class="field-row">
+        <div class="field">
+          <textarea class="short" placeholder="e.g. The man called Ho Fang in Shanghai has held that identity through five successive bodies since the 1920s. Whatever the ritual is passing from one person to the next, it is not a soul. But it is not nothing."></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addKnowledge()">+ Add Knowledge</button>
+
+    <hr class="divider">
+    <div class="section-header">The People Who Made It Possible</div>
+    <div class="help-text" style="margin-bottom:10px;">The people this character has encountered who gave something real. Not a contact list — a record of what was offered and what it cost them.</div>
+
+    <div id="people-list">
+      <div style="background: var(--paper-mid); border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 8px;">
+        <div class="field-row">
+          <div class="field w-fixed-120">
+            <div class="field-label">Name / Location</div>
+            <input type="text" placeholder="e.g. Chen Jing — Shanghai">
+          </div>
+          <div class="field w2">
+            <div class="field-label">What they gave</div>
+            <input type="text" placeholder="e.g. Stayed behind to anchor the seal. Is still there.">
+          </div>
+          <div class="field w-fixed-120">
+            <div class="field-label">Status</div>
+            <input type="text" placeholder="Safe / Unknown / —">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addPerson()">+ Add Person</button>
+
+    <hr class="divider">
+    <div class="section-header">Notes</div>
+    <textarea style="width:100%; min-height:120px;" id="notes" placeholder="Anything that does not fit elsewhere. Things the character knows that are not yet confirmed. Suspicions. Unresolved questions."></textarea>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="sheet-footer">
+    <div>
+      <button class="save-btn" onclick="saveSheet()">Save Sheet</button>
+      <button class="save-btn" onclick="loadSheet()" style="background: var(--paper-mid); border-color: var(--border-bright);">Load Sheet</button>
+      <input type="file" id="load-input" accept=".json" style="display:none;" onchange="handleLoad(event)">
+    </div>
+    <div class="footer-note">The Long Dark — Call of Cthulhu 2001 — v1.0<br>Share the saved .json with your Keeper after each session.</div>
+  </div>
+
+</div>
+
+<script>
+  // TAB NAVIGATION
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // STAT HALF VALUES
+  function calcHalf(stat) {
+    const val = parseInt(document.getElementById(stat).value) || 0;
+    document.getElementById(stat + '-half').textContent = '½ ' + Math.floor(val / 2);
+  }
+
+  // SKILL CHECK TOGGLE
+  function toggleSkill(el) {
+    el.classList.toggle('marked');
+  }
+
+  // SANITY TRACK
+  function buildSanityTrack() {
+    const track = document.getElementById('sanity-track');
+    track.innerHTML = '';
+    for (let i = 0; i < 99; i++) {
+      const pip = document.createElement('div');
+      pip.className = 'sanity-pip';
+      pip.dataset.index = i;
+      pip.onclick = () => pip.classList.toggle('lost');
+      track.appendChild(pip);
+    }
+  }
+
+  function updateSanityTrack() {
+    const current = parseInt(document.getElementById('san-current').value) || 0;
+    const max = parseInt(document.getElementById('san-max').value) || 99;
+    document.querySelectorAll('.sanity-pip').forEach((pip, i) => {
+      pip.classList.remove('filled', 'lost');
+      if (i < current) pip.classList.add('filled');
+      else if (i >= max) pip.classList.add('lost');
+    });
+  }
+
+  buildSanityTrack();
+
+  // ADD ROWS
+  function addWeapon() {
+    const list = document.getElementById('weapon-list');
+    const row = document.createElement('div');
+    row.className = 'weapon-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Weapon name">
+      <input type="number" min="0" max="99" placeholder="—">
+      <input type="text" placeholder="damage">
+      <input type="text" placeholder="range">
+      <input type="text" placeholder="How acquired / notes">
+    `;
+    list.appendChild(row);
+  }
+
+  function addFragment() {
+    const list = document.getElementById('fragment-list');
+    const div = document.createElement('div');
+    div.className = 'spell-fragment';
+    div.innerHTML = `
+      <div class="field-row">
+        <div class="field w-fixed-120">
+          <div class="field-label">Source / Location</div>
+          <input type="text" placeholder="Source">
+        </div>
+        <div class="field w2">
+          <div class="field-label">What it appears to describe</div>
+          <input type="text" placeholder="Description">
+        </div>
+        <div class="field w-fixed-80">
+          <div class="field-label">Sanity cost</div>
+          <input type="text" placeholder="0/1">
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  function addSpell() {
+    const list = document.getElementById('spell-list');
+    const div = document.createElement('div');
+    div.className = 'spell-assembled';
+    div.innerHTML = `
+      <div class="field-row">
+        <div class="field w2">
+          <div class="field-label">Spell / Ritual name</div>
+          <input type="text" placeholder="Name">
+        </div>
+        <div class="field w-fixed-80">
+          <div class="field-label">MP cost</div>
+          <input type="number" placeholder="0" min="0">
+        </div>
+        <div class="field w-fixed-80">
+          <div class="field-label">Sanity cost</div>
+          <input type="text" placeholder="0/1D3">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">What it does</div>
+          <input type="text" placeholder="Effect, duration, limitations">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">Assembled from</div>
+          <input type="text" placeholder="Sources">
+        </div>
+        <div class="field w-fixed-120">
+          <div class="field-label">Times used</div>
+          <input type="number" placeholder="0" min="0">
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  function addWitness() {
+    const list = document.getElementById('witness-list');
+    const div = document.createElement('div');
+    div.className = 'witness-entry';
+    div.innerHTML = `
+      <input type="text" style="width:80px; flex-shrink:0; font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--red); text-transform:uppercase;" placeholder="Location">
+      <textarea class="short" style="flex:1;" placeholder="What they understood..."></textarea>
+    `;
+    list.appendChild(div);
+  }
+
+  function addInsanity() {
+    const list = document.getElementById('insanity-list');
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--paper-mid);border:1px solid var(--border);border-left:3px solid var(--red-dim);padding:10px 12px;margin-bottom:8px;';
+    div.innerHTML = `
+      <div class="field-row">
+        <div class="field w-fixed-120">
+          <div class="field-label">Location / Session</div>
+          <input type="text" placeholder="Location">
+        </div>
+        <div class="field">
+          <div class="field-label">Trigger</div>
+          <input type="text" placeholder="What caused it">
+        </div>
+        <div class="field">
+          <div class="field-label">Form</div>
+          <input type="text" placeholder="How it manifested">
+        </div>
+        <div class="field w-fixed-80">
+          <div class="field-label">Resolved?</div>
+          <select><option value="">—</option><option>Yes</option><option>Partially</option><option>No</option></select>
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  function addKnowledge() {
+    const list = document.getElementById('knowledge-list');
+    const div = document.createElement('div');
+    div.className = 'field-row';
+    div.innerHTML = `<div class="field"><textarea class="short" placeholder="Something they now understand..."></textarea></div>`;
+    list.appendChild(div);
+  }
+
+  function addPerson() {
+    const list = document.getElementById('people-list');
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--paper-mid);border:1px solid var(--border);padding:10px 12px;margin-bottom:8px;';
+    div.innerHTML = `
+      <div class="field-row">
+        <div class="field w-fixed-120">
+          <div class="field-label">Name / Location</div>
+          <input type="text" placeholder="Name — City">
+        </div>
+        <div class="field w2">
+          <div class="field-label">What they gave</div>
+          <input type="text" placeholder="What they offered or sacrificed">
+        </div>
+        <div class="field w-fixed-120">
+          <div class="field-label">Status</div>
+          <input type="text" placeholder="Safe / Unknown / —">
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  // PORTRAIT UPLOAD
+  function handlePortrait(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('portrait-img').src = e.target.result;
+      document.getElementById('portrait-img').style.display = 'block';
+      document.getElementById('portrait-placeholder').style.display = 'none';
+      window._portraitData = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPortrait(event) {
+    event.stopPropagation();
+    document.getElementById('portrait-img').src = '';
+    document.getElementById('portrait-img').style.display = 'none';
+    document.getElementById('portrait-placeholder').style.display = 'flex';
+    window._portraitData = null;
+    document.getElementById('portrait-input').value = '';
+  }
+  function gatherData() {
+    const data = {};
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
+    data._skills_marked = [];
+    document.querySelectorAll('.skill-check.marked').forEach((el, i) => {
+      data._skills_marked.push(i);
+    });
+    data._sanity_pips = [];
+    document.querySelectorAll('.sanity-pip.lost').forEach(pip => {
+      data._sanity_pips.push(pip.dataset.index);
+    });
+    // Save dynamic content
+    data._dynamic = document.getElementById('weapon-list').innerHTML
+      + '|||' + document.getElementById('fragment-list').innerHTML
+      + '|||' + document.getElementById('spell-list').innerHTML
+      + '|||' + document.getElementById('witness-list').innerHTML
+      + '|||' + document.getElementById('insanity-list').innerHTML
+      + '|||' + document.getElementById('knowledge-list').innerHTML
+      + '|||' + document.getElementById('people-list').innerHTML;
+    data._portrait = window._portraitData || null;
+  }
+
+  function saveSheet() {
+    const data = gatherData();
+    const name = document.getElementById('name').value || 'investigator';
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tld_' + name.toLowerCase().replace(/\s+/g, '_') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadSheet() {
+    document.getElementById('load-input').click();
+  }
+
+  function handleLoad(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        // Restore dynamic content first
+        if (data._dynamic) {
+          const parts = data._dynamic.split('|||');
+          document.getElementById('weapon-list').innerHTML = parts[0] || '';
+          document.getElementById('fragment-list').innerHTML = parts[1] || '';
+          document.getElementById('spell-list').innerHTML = parts[2] || '';
+          document.getElementById('witness-list').innerHTML = parts[3] || '';
+          document.getElementById('insanity-list').innerHTML = parts[4] || '';
+          document.getElementById('knowledge-list').innerHTML = parts[5] || '';
+          document.getElementById('people-list').innerHTML = parts[6] || '';
+        }
+        // Restore portrait
+        if (data._portrait) {
+          document.getElementById('portrait-img').src = data._portrait;
+          document.getElementById('portrait-img').style.display = 'block';
+          document.getElementById('portrait-placeholder').style.display = 'none';
+          window._portraitData = data._portrait;
+        }
+        // Restore field values
+        Object.keys(data).forEach(key => {
+          if (key.startsWith('_')) return;
+          const el = document.getElementById(key);
+          if (el) el.value = data[key];
+        });
+        // Restore half values
+        ['str','con','siz','dex','app','int','pow','edu','luck'].forEach(s => calcHalf(s));
+        // Restore skill marks
+        document.querySelectorAll('.skill-check').forEach(el => el.classList.remove('marked'));
+        if (data._skills_marked) {
+          const checks = document.querySelectorAll('.skill-check');
+          data._skills_marked.forEach(i => { if (checks[i]) checks[i].classList.add('marked'); });
+        }
+        // Restore sanity pips
+        document.querySelectorAll('.sanity-pip').forEach(p => p.classList.remove('lost'));
+        if (data._sanity_pips) {
+          data._sanity_pips.forEach(i => {
+            const pip = document.querySelector(`.sanity-pip[data-index="${i}"]`);
+            if (pip) pip.classList.add('lost');
+          });
+        }
+        updateSanityTrack();
+      } catch(err) {
+        alert('Could not load sheet. Make sure the file is a valid .json sheet from The Long Dark.');
+      }
+    };
+    reader.readAsText(file);
+  }
+</script>
+
+</body>
+</html>
