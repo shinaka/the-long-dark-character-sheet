@@ -1594,7 +1594,7 @@
   function gatherData() {
     const data = {};
     document.querySelectorAll('input, textarea, select').forEach(el => {
-      if (el.id) data[el.id] = el.value;
+      if (el.id && el.type !== 'file') data[el.id] = el.value;
     });
     data._skills_marked = [];
     document.querySelectorAll('.skill-check.marked').forEach((el, i) => {
@@ -1661,7 +1661,7 @@
         Object.keys(data).forEach(key => {
           if (key.startsWith('_')) return;
           const el = document.getElementById(key);
-          if (el) el.value = data[key];
+          if (el && el.type !== 'file') el.value = data[key];
         });
         // Restore half values
         ['str','con','siz','dex','app','int','pow','edu','luck'].forEach(s => calcHalf(s));
