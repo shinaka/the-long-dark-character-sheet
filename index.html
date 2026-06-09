@@ -1599,9 +1599,16 @@
     document.querySelectorAll('input, textarea, select').forEach(el => {
       if (el.id && el.type !== 'file') data[el.id] = el.value;
     });
-    data._skills_marked = [];
-    document.querySelectorAll('.skill-check.marked').forEach((el, i) => {
-      data._skills_marked.push(i);
+    // Skill values (the .skill-value inputs have no id) + marked state,
+    // captured per row in document order.
+    data._skills = [];
+    document.querySelectorAll('.skill-row').forEach(row => {
+      const input = row.querySelector('.skill-value');
+      const check = row.querySelector('.skill-check');
+      data._skills.push({
+        v: input ? input.value : '',
+        m: check ? check.classList.contains('marked') : false
+      });
     });
     data._sanity_pips = [];
     document.querySelectorAll('.sanity-pip.lost').forEach(pip => {
@@ -1668,9 +1675,19 @@
         });
         // Restore half values
         ['str','con','siz','dex','app','int','pow','edu','luck'].forEach(s => calcHalf(s));
-        // Restore skill marks
-        document.querySelectorAll('.skill-check').forEach(el => el.classList.remove('marked'));
-        if (data._skills_marked) {
+        // Restore skill values + marks per row.
+        const skillRows = document.querySelectorAll('.skill-row');
+        skillRows.forEach(row => row.querySelector('.skill-check')?.classList.remove('marked'));
+        if (data._skills) {
+          data._skills.forEach((s, i) => {
+            const row = skillRows[i];
+            if (!row) return;
+            const input = row.querySelector('.skill-value');
+            if (input) input.value = s.v;
+            if (s.m) row.querySelector('.skill-check')?.classList.add('marked');
+          });
+        } else if (data._skills_marked) {
+          // Backward compatibility with older saves (marks only).
           const checks = document.querySelectorAll('.skill-check');
           data._skills_marked.forEach(i => { if (checks[i]) checks[i].classList.add('marked'); });
         }
