@@ -1605,11 +1605,14 @@
     // captured per row in document order.
     data._skills = [];
     document.querySelectorAll('.skill-row').forEach(row => {
-      const input = row.querySelector('.skill-value');
       const check = row.querySelector('.skill-check');
+      // Capture every control in the row (skill value AND any custom
+      // name field, e.g. specialist skills / additional languages).
+      const inputs = [...row.querySelectorAll('input, textarea, select')].map(el =>
+        (el.type === 'checkbox' || el.type === 'radio') ? { c: el.checked } : { v: el.value });
       data._skills.push({
-        v: input ? input.value : '',
-        m: check ? check.classList.contains('marked') : false
+        m: check ? check.classList.contains('marked') : false,
+        inputs
       });
     });
     data._sanity_pips = [];
@@ -1694,9 +1697,21 @@
       data._skills.forEach((s, i) => {
         const row = skillRows[i];
         if (!row) return;
-        const input = row.querySelector('.skill-value');
-        if (input) input.value = s.v;
         if (s.m) row.querySelector('.skill-check')?.classList.add('marked');
+        if (s.inputs) {
+          // New format: restore every control in row order.
+          const controls = [...row.querySelectorAll('input, textarea, select')];
+          s.inputs.forEach((sv, j) => {
+            const el = controls[j];
+            if (!el) return;
+            if (el.type === 'checkbox' || el.type === 'radio') { if ('c' in sv) el.checked = sv.c; }
+            else if ('v' in sv) el.value = sv.v;
+          });
+        } else if ('v' in s) {
+          // Backward compatibility: old saves stored only the skill value.
+          const input = row.querySelector('.skill-value');
+          if (input) input.value = s.v;
+        }
       });
     } else if (data._skills_marked) {
       // Backward compatibility with older saves (marks only).
