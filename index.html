@@ -1374,6 +1374,7 @@
     <div>
       <button class="save-btn" onclick="saveSheet()">Save Sheet</button>
       <button class="save-btn" onclick="loadSheet()" style="background: var(--paper-mid); border-color: var(--border-bright);">Load Sheet</button>
+      <button class="save-btn" onclick="newSheet()" style="background: var(--paper-mid); border-color: var(--border-bright);">New Sheet</button>
       <input type="file" id="load-input" accept=".json" style="display:none;" onchange="handleLoad(event)">
     </div>
     <div class="footer-note">The Long Dark — Call of Cthulhu 2001 — v1.0<br>Share the saved .json with your Keeper after each session.</div>
@@ -1582,6 +1583,7 @@
       document.getElementById('portrait-img').style.display = 'block';
       document.getElementById('portrait-placeholder').style.display = 'none';
       window._portraitData = e.target.result;
+      schedulePersist();
     };
     reader.readAsDataURL(file);
   }
@@ -1614,14 +1616,28 @@
     document.querySelectorAll('.sanity-pip.lost').forEach(pip => {
       data._sanity_pips.push(pip.dataset.index);
     });
-    // Save dynamic content
-    data._dynamic = document.getElementById('weapon-list').innerHTML
-      + '|||' + document.getElementById('fragment-list').innerHTML
-      + '|||' + document.getElementById('spell-list').innerHTML
-      + '|||' + document.getElementById('witness-list').innerHTML
-      + '|||' + document.getElementById('insanity-list').innerHTML
-      + '|||' + document.getElementById('knowledge-list').innerHTML
-      + '|||' + document.getElementById('people-list').innerHTML;
+    // Save dynamic content. innerHTML serializes attributes, not the live
+    // values typed into inputs/textareas/selects, so reflect those into the
+    // DOM attributes first or the typed content would be lost on restore.
+    const dynamicLists = ['weapon-list','fragment-list','spell-list','witness-list','insanity-list','knowledge-list','people-list'];
+    dynamicLists.forEach(id => {
+      const container = document.getElementById(id);
+      if (!container) return;
+      container.querySelectorAll('input').forEach(el => {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          if (el.checked) el.setAttribute('checked', ''); else el.removeAttribute('checked');
+        } else {
+          el.setAttribute('value', el.value);
+        }
+      });
+      container.querySelectorAll('textarea').forEach(el => { el.textContent = el.value; });
+      container.querySelectorAll('select').forEach(sel => {
+        Array.from(sel.options).forEach(o => {
+          if (o.selected) o.setAttribute('selected', ''); else o.removeAttribute('selected');
+        });
+      });
+    });
+    data._dynamic = dynamicLists.map(id => document.getElementById(id).innerHTML).join('|||');
     data._portrait = window._portraitData || null;
     return data;
   }
@@ -1642,71 +1658,128 @@
     document.getElementById('load-input').click();
   }
 
+  // Apply a parsed sheet object to the DOM. Shared by file import and
+  // the localStorage autosave restore.
+  function applyData(data) {
+    // Restore dynamic content first
+    if (data._dynamic) {
+      const parts = data._dynamic.split('|||');
+      document.getElementById('weapon-list').innerHTML = parts[0] || '';
+      document.getElementById('fragment-list').innerHTML = parts[1] || '';
+      document.getElementById('spell-list').innerHTML = parts[2] || '';
+      document.getElementById('witness-list').innerHTML = parts[3] || '';
+      document.getElementById('insanity-list').innerHTML = parts[4] || '';
+      document.getElementById('knowledge-list').innerHTML = parts[5] || '';
+      document.getElementById('people-list').innerHTML = parts[6] || '';
+    }
+    // Restore portrait
+    if (data._portrait) {
+      document.getElementById('portrait-img').src = data._portrait;
+      document.getElementById('portrait-img').style.display = 'block';
+      document.getElementById('portrait-placeholder').style.display = 'none';
+      window._portraitData = data._portrait;
+    }
+    // Restore field values
+    Object.keys(data).forEach(key => {
+      if (key.startsWith('_')) return;
+      const el = document.getElementById(key);
+      if (el && el.type !== 'file') el.value = data[key];
+    });
+    // Restore half values
+    ['str','con','siz','dex','app','int','pow','edu','luck'].forEach(s => calcHalf(s));
+    // Restore skill values + marks per row.
+    const skillRows = document.querySelectorAll('.skill-row');
+    skillRows.forEach(row => row.querySelector('.skill-check')?.classList.remove('marked'));
+    if (data._skills) {
+      data._skills.forEach((s, i) => {
+        const row = skillRows[i];
+        if (!row) return;
+        const input = row.querySelector('.skill-value');
+        if (input) input.value = s.v;
+        if (s.m) row.querySelector('.skill-check')?.classList.add('marked');
+      });
+    } else if (data._skills_marked) {
+      // Backward compatibility with older saves (marks only).
+      const checks = document.querySelectorAll('.skill-check');
+      data._skills_marked.forEach(i => { if (checks[i]) checks[i].classList.add('marked'); });
+    }
+    // Apply the auto filled/lost baseline from current/max first
+    // (updateSanityTrack clears every pip), then layer the
+    // manually-toggled lost pips on top so they aren't wiped.
+    updateSanityTrack();
+    if (data._sanity_pips) {
+      data._sanity_pips.forEach(i => {
+        const pip = document.querySelector(`.sanity-pip[data-index="${i}"]`);
+        if (pip) pip.classList.add('lost');
+      });
+    }
+  }
+
   function handleLoad(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        const data = JSON.parse(e.target.result);
-        // Restore dynamic content first
-        if (data._dynamic) {
-          const parts = data._dynamic.split('|||');
-          document.getElementById('weapon-list').innerHTML = parts[0] || '';
-          document.getElementById('fragment-list').innerHTML = parts[1] || '';
-          document.getElementById('spell-list').innerHTML = parts[2] || '';
-          document.getElementById('witness-list').innerHTML = parts[3] || '';
-          document.getElementById('insanity-list').innerHTML = parts[4] || '';
-          document.getElementById('knowledge-list').innerHTML = parts[5] || '';
-          document.getElementById('people-list').innerHTML = parts[6] || '';
-        }
-        // Restore portrait
-        if (data._portrait) {
-          document.getElementById('portrait-img').src = data._portrait;
-          document.getElementById('portrait-img').style.display = 'block';
-          document.getElementById('portrait-placeholder').style.display = 'none';
-          window._portraitData = data._portrait;
-        }
-        // Restore field values
-        Object.keys(data).forEach(key => {
-          if (key.startsWith('_')) return;
-          const el = document.getElementById(key);
-          if (el && el.type !== 'file') el.value = data[key];
-        });
-        // Restore half values
-        ['str','con','siz','dex','app','int','pow','edu','luck'].forEach(s => calcHalf(s));
-        // Restore skill values + marks per row.
-        const skillRows = document.querySelectorAll('.skill-row');
-        skillRows.forEach(row => row.querySelector('.skill-check')?.classList.remove('marked'));
-        if (data._skills) {
-          data._skills.forEach((s, i) => {
-            const row = skillRows[i];
-            if (!row) return;
-            const input = row.querySelector('.skill-value');
-            if (input) input.value = s.v;
-            if (s.m) row.querySelector('.skill-check')?.classList.add('marked');
-          });
-        } else if (data._skills_marked) {
-          // Backward compatibility with older saves (marks only).
-          const checks = document.querySelectorAll('.skill-check');
-          data._skills_marked.forEach(i => { if (checks[i]) checks[i].classList.add('marked'); });
-        }
-        // Apply the auto filled/lost baseline from current/max first
-        // (updateSanityTrack clears every pip), then layer the
-        // manually-toggled lost pips on top so they aren't wiped.
-        updateSanityTrack();
-        if (data._sanity_pips) {
-          data._sanity_pips.forEach(i => {
-            const pip = document.querySelector(`.sanity-pip[data-index="${i}"]`);
-            if (pip) pip.classList.add('lost');
-          });
-        }
+        applyData(JSON.parse(e.target.result));
+        persistLocal(); // remember the freshly imported character
       } catch(err) {
         alert('Could not load sheet. Make sure the file is a valid .json sheet from The Long Dark.');
       }
     };
     reader.readAsText(file);
   }
+
+  // ---- Autosave to localStorage ----------------------------------------
+  // The character is remembered between reloads. JSON import/export still
+  // works for sharing/backups; this just adds local persistence.
+  const LS_KEY = 'tld_character_sheet';
+  let _persistTimer = null;
+
+  function persistLocal() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(gatherData()));
+    } catch(e) {
+      // Most likely the quota was exceeded by a large portrait image.
+      // Fall back to saving everything except the portrait.
+      try {
+        const data = gatherData();
+        data._portrait = null;
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
+      } catch(e2) { /* give up silently */ }
+    }
+  }
+
+  function schedulePersist() {
+    clearTimeout(_persistTimer);
+    _persistTimer = setTimeout(persistLocal, 400);
+  }
+
+  function restoreLocal() {
+    let raw = null;
+    try { raw = localStorage.getItem(LS_KEY); } catch(e) { return; }
+    if (!raw) return;
+    try { applyData(JSON.parse(raw)); } catch(e) { /* ignore corrupt data */ }
+  }
+
+  function newSheet() {
+    if (!confirm('Start a new blank sheet? This clears the character remembered in this browser. Export to JSON first if you want to keep it.')) return;
+    clearTimeout(_persistTimer);
+    document.removeEventListener('input', schedulePersist);
+    document.removeEventListener('change', schedulePersist);
+    document.removeEventListener('click', schedulePersist);
+    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    location.reload();
+  }
+
+  // Capture edits: text/number/select changes, plus clicks that toggle
+  // skill checks, sanity pips, and add/remove dynamic rows.
+  document.addEventListener('input', schedulePersist);
+  document.addEventListener('change', schedulePersist);
+  document.addEventListener('click', schedulePersist);
+
+  // Load any remembered character on startup.
+  restoreLocal();
 </script>
 
 </body>
