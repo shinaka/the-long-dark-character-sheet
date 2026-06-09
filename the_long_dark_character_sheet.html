@@ -534,7 +534,10 @@
         <div class="campaign-title">The Long Dark</div>
         <div class="campaign-subtitle">Call of Cthulhu — 2001 — Investigator Record</div>
       </div>
-      <div class="classification">Not For Distribution<br>Handler Copy: Irene</div>
+      <div style="text-align:right;">
+        <div class="classification">Not For Distribution<br>Handler Copy: Irene</div>
+        <div id="last-saved" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--ink-dim);letter-spacing:1px;margin-top:6px;"></div>
+      </div>
     </div>
     <hr class="header-rule">
   </div>
@@ -1384,11 +1387,18 @@
 
 <script>
   // TAB NAVIGATION
-  function showPage(name) {
+  function showPage(name, persist = true) {
+    const page = document.getElementById('page-' + name);
+    if (!page) return;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    event.target.classList.add('active');
+    page.classList.add('active');
+    // Activate the matching tab button (works for clicks and programmatic calls).
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      const oc = b.getAttribute('onclick') || '';
+      if (oc.includes("'" + name + "'")) b.classList.add('active');
+    });
+    if (persist) { try { localStorage.setItem('tld_active_page', name); } catch(e) {} }
   }
 
   // STAT HALF VALUES
@@ -1749,11 +1759,24 @@
   // The character is remembered between reloads. JSON import/export still
   // works for sharing/backups; this just adds local persistence.
   const LS_KEY = 'tld_character_sheet';
+  const LS_SAVED_KEY = 'tld_last_saved';
+  const LS_PAGE_KEY = 'tld_active_page';
   let _persistTimer = null;
 
+  function setLastSaved(ts) {
+    const el = document.getElementById('last-saved');
+    if (!el) return;
+    if (!ts) { el.textContent = ''; return; }
+    const d = new Date(ts);
+    el.textContent = 'Last saved ' + d.toLocaleString(undefined,
+      { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+  }
+
   function persistLocal() {
+    let ok = false;
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(gatherData()));
+      ok = true;
     } catch(e) {
       // Most likely the quota was exceeded by a large portrait image.
       // Fall back to saving everything except the portrait.
@@ -1761,11 +1784,19 @@
         const data = gatherData();
         data._portrait = null;
         localStorage.setItem(LS_KEY, JSON.stringify(data));
+        ok = true;
       } catch(e2) { /* give up silently */ }
+    }
+    if (ok) {
+      const ts = Date.now();
+      try { localStorage.setItem(LS_SAVED_KEY, String(ts)); } catch(e) {}
+      setLastSaved(ts);
     }
   }
 
+  let _persistDisabled = false;
   function schedulePersist() {
+    if (_persistDisabled) return;
     clearTimeout(_persistTimer);
     _persistTimer = setTimeout(persistLocal, 400);
   }
@@ -1779,11 +1810,9 @@
 
   function newSheet() {
     if (!confirm('Start a new blank sheet? This clears the character remembered in this browser. Export to JSON first if you want to keep it.')) return;
+    _persistDisabled = true;
     clearTimeout(_persistTimer);
-    document.removeEventListener('input', schedulePersist);
-    document.removeEventListener('change', schedulePersist);
-    document.removeEventListener('click', schedulePersist);
-    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    [LS_KEY, LS_SAVED_KEY, LS_PAGE_KEY].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
     location.reload();
   }
 
@@ -1791,10 +1820,23 @@
   // skill checks, sanity pips, and add/remove dynamic rows.
   document.addEventListener('input', schedulePersist);
   document.addEventListener('change', schedulePersist);
-  document.addEventListener('click', schedulePersist);
+  document.addEventListener('click', e => {
+    // Tab switches persist their own state and don't change sheet content,
+    // so they shouldn't bump the "last saved" timestamp.
+    if (e.target.closest('.tab-btn')) return;
+    schedulePersist();
+  });
 
-  // Load any remembered character on startup.
+  // Load any remembered character on startup, then restore the active tab
+  // and the last-saved timestamp.
   restoreLocal();
+  (function restoreUiState() {
+    let page = null, ts = null;
+    try { page = localStorage.getItem(LS_PAGE_KEY); } catch(e) {}
+    try { ts = localStorage.getItem(LS_SAVED_KEY); } catch(e) {}
+    if (page && document.getElementById('page-' + page)) showPage(page, false);
+    if (ts) setLastSaved(Number(ts));
+  })();
 </script>
 
 </body>
